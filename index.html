@@ -83,7 +83,12 @@ p { margin-bottom: 14px; }
   font-size: 14px;
 }
 
-.grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 22px; margin-top: 24px; }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr; /* 1열로 변경 */
+  gap: 22px; /* 카드 간 간격 유지 */
+  margin-top: 24px;
+}
 
 .card {
   border-radius: 20px;
@@ -168,21 +173,23 @@ p { margin-bottom: 14px; }
   </section>
 
   <section class="grid">
-    <article class="card">
-<h2>1. 문제 인식</h2>
-<p>엘레베이터를 기다리는 것은 지루하다 특히 엘레베이터가 어디를 들렀다가 오는 지 얼마 후에 도착 할 지 알수없어 불편하다</p>
-</article>
-    <article class="card">
-      <h2>2. 알고리즘의 기본 개념</h2>
-      <p>본 시스템은 사용자가 엘리베이터 버튼을 누르는 순간, 현재 엘리베이터의 정확한 위치와 이동 방향,
-          그리고 이미 접수되어 있는 다른 층의 요청 정보, 엘레베이터 내부의 호출 데이터 분석하여 사용자가 기다려야 하는 시간을 예측하는 알고리즘입니다.</p>
-<h2>구체적 알고리즘</h2>
-      <h3>엘레베이터가 상향 이동 중일 때의 계산</h3>
+  <!-- 1. 문제인식 -->
+  <article class="card">
+    <h2>1. 문제인식</h2>
+    <p>엘리베이터를 기다리는 것은 지루하다. 특히 엘리베이터가 어디를 들렀다가 오는지, 얼마 후에 도착할지 알 수 없어 불편하다.</p>
+  </article>
+
+  <!-- 2. 알고리즘 -->
+  <article class="card">
+    <h2>2. 알고리즘</h2>
+
+    <h3>2-1. 엘리베이터 예상</h3>
+    <h4>엘레베이터가 상향 이동 중일 때의 계산</h4>
       <p>엘레베이터가 들를 층의 순서를 엘레베이터이동순서 라고 정의한다
           현재층보다 높은 상향호출층집합을 낮은 층부터 정렬한것을 엘레베이터이동순서에 추가한다
           하향호출층집합을 높은 층 부터 정렬한 것을 엘레베이터이동순서에 추가한다
           현재층보다 낮은 상향호출층집합을 낮은 층부터 정렬한 것을 엘레베이터이동순서에 추가한다</p>
-<h3>엘레베이터가 하향 이동 중일 때의 계산</h3>
+<h4>엘레베이터가 하향 이동 중일 때의 계산</h4>
         <p>
           하향 이동 중일 때는 위의 구조를 반대로 적용한다.
 
@@ -193,75 +200,46 @@ p { margin-bottom: 14px; }
 
 
         </p>
-<h3>정지 상태일 때</h3>
+<h4>정지 상태일 때</h4>
         <p>
           엘리베이터가 정지 상태라면 새로 들어온 호출 위치를 기준으로 방향을 결정한다.
           요청한 층이 현재층보다 높으면 상향, 낮으면 하향으로 방향을 정하고,
           같은 층이라면 즉시 문을 열어 사용자가 탑승할 수 있도록 한다.
         </p>
-    </article>
 
-    <article class="card">
-  <h2>3. 도착 시간 예상 과정</h2>
-  <p>엘리베이터 이동 순서를 기반으로 실제 이동 시간을 계산합니다.</p>
+
+    <h3>2-2. 도착 시간 예측 과정</h3>
+    <p>엘리베이터 이동 순서를 기반으로 실제 이동 시간을 계산합니다.</p>
     <p>현재 엘리베이터의 층과 엘리베이터 이동 순서의 첫 항(가야할 층) 사이의 거리를 구한다.</p>
     <p><b>거리를 이용해 이동 시간을 계산</b>한 뒤, 각 층에서의 대기 시간을 더한다.</p>
     <p>다음 층부터 마지막 층까지 동일한 과정을 반복하여 각 구간의 시간을 합산하고, 총 도착 예상 시간을 구한다.</p>
 
-  <h2>4. 층 사이 거리별 시간 계산 공식</h2>
 
-  <h3>등속운동이 있는 경우 (층간거리가 충분히 긴 경우)</h3>
-  <div class="flow">
-    <div class="step">
-      <strong>가속 구간:</strong>
-      <p>엘리베이터가 출발하여 최대속도 v에 도달할 때까지 가속도 a로 이동</p>
-      <div class="formula">가속거리 = v² / (2a)</div>
-      <div class="formula">가속시간 = v / a</div>
+    <h3>2-3. 층 사이 거리별 시간 계산 공식</h3>
+    <div class="flow">
+      <div class="step">
+        <strong>등속운동 있는 경우:</strong>
+        <p>가속 → 등속 → 감속</p>
+        <div class="formula">가속거리 = v² / (2a)</div>
+        <div class="formula">등속시간 = 등속거리 / v</div>
+        <div class="formula">감속시간 = v / b</div>
+        <div class="formula">총시간 = 가속시간 + 등속시간 + 감속시간 + 정차대기시간</div>
+      </div>
+      <div class="step">
+        <strong>등속운동 없는 경우:</strong>
+        <p>가속과 감속만 존재, 최대 속도에 도달하지 못함</p>
+        <div class="formula">s₁ = (b / (a + b)) × s</div>
+        <div class="formula">s₂ = (a / (a + b)) × s</div>
+        <div class="formula">v_max = √(2 × a × s₁) = √(2 × b × s₂)</div>
+        <div class="formula">총 이동시간 = t_acc + t_dec + 정차대기시간</div>
+      </div>
     </div>
-    <div class="step">
-      <strong>등속 구간:</strong>
-      <p>가속과 감속을 제외한 나머지 구간을 등속으로 이동</p>
-      <div class="formula">등속거리 = 전체거리 - (가속거리 + 감속거리)</div>
-      <div class="formula">등속시간 = 등속거리 / v</div>
-    </div>
-    <div class="step">
-      <strong>감속 구간:</strong>
-      <p>목적 층에 가까워지면 감속도 b로 정지</p>
-      <div class="formula">감속거리 = v² / (2b)</div>
-      <div class="formula">감속시간 = v / b</div>
-    </div>
-    <div class="step">
-      <strong>총 이동 시간:</strong>
-      <div class="formula">총시간 = 가속시간 + 등속시간 + 감속시간 + 각 층 정차 대기시간</div>
-    </div>
-  </div>
-
-  <h3>등속운동이 없는 경우 (층간거리가 짧아 최대속도에 도달하지 못하는 경우)</h3>
-  <div class="flow">
-    <div class="step">
-      <strong>가속과 감속 거리 계산:</strong>
-      <p>총거리 s에 맞춰 가속거리 s₁과 감속거리 s₂를 거리 비율로 조정</p>
-      <div class="formula">s₁ = (b / (a + b)) × s</div>
-      <div class="formula">s₂ = (a / (a + b)) × s</div>
-    </div>
-    <div class="step">
-      <strong>최고점 속도 계산:</strong>
-      <div class="formula">v_max = √(2 × a × s₁) = √(2 × b × s₂)</div>
-    </div>
-    <div class="step">
-      <strong>각 구간 시간 계산:</strong>
-      <div class="formula">t_acc = v_max / a</div>
-      <div class="formula">t_dec = v_max / b</div>
-      <div class="formula">총 이동시간 = t_acc + t_dec + 각 층 정차 대기시간</div>
-    </div>
-  </div>
-
   </article>
-  </section>
+
 
   <section class="final-box">
-    <h2>5. 기대호과</h2>
-    <p>지루하지 않고 엘레베이터를 기다릴 수 있따</p>
+    <h2>3. 기대효과</h2>
+    <p>엘레베이터가 정확히 몇초 뒤에 도착하는 지 알수없어 느끼는 답답함과 지루함을 줄여준다<br>얼마 뒤에 도착하는 지를 알면 다른 일을 하다가 시간에 맞춰 나갈 수 있어 시간을 아낄 수 있다</p>
   </section>
 
   <div class="footer">엘레베이터 시간 예측</div>
