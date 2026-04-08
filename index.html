@@ -1,120 +1,270 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>엘리베이터 경로·도착시간 알고리즘 정리</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>엘리베이터 알고리즘 줄글 설명 - 베이지 톤</title>
+<style>
+:root {
+  --bg1: #f5f1eb;
+  --bg2: #ede6dc;
+  --card: rgba(255, 255, 240, 0.85);
+  --card-border: rgba(200, 180, 160, 0.4);
+  --text: #3a2f25;
+  --sub: #7b6c5c;
+  --accent: #c9a66b;
+  --accent2: #d4b084;
+  --shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+* { box-sizing: border-box; margin:0; padding:0; }
+
+body {
+  font-family: "Pretendard", "Noto Sans KR", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(201,166,107,0.15), transparent 30%),
+    radial-gradient(circle at top right, rgba(212,176,132,0.12), transparent 25%),
+    linear-gradient(160deg, var(--bg1), var(--bg2));
+  color: var(--text);
+  line-height: 1.8;
+}
+
+.wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 16px 60px;
+}
+
+.hero {
+  padding: 48px 28px;
+  border-radius: 24px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -40px -40px auto;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent2), transparent 65%);
+  pointer-events: none;
+}
+
+.eyebrow {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,240,0.6);
+  border: 1px solid rgba(200,180,160,0.4);
+  color: var(--sub);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+h1 { font-size: clamp(28px, 5vw, 48px); margin-bottom: 14px; }
+h2 { font-size: 24px; margin-bottom: 14px; }
+h3 { font-size: 18px; color: var(--sub); margin: 26px 0 10px; }
+
+p { margin-bottom: 14px; }
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.tag {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(201,166,107,0.2);
+  border: 1px solid rgba(201,166,107,0.4);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 22px; margin-top: 24px; }
+
+.card {
+  border-radius: 20px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 26px 24px;
+  transition: transform 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 25px 50px rgba(0,0,0,0.18);
+}
+
+.flow { display: grid; gap: 14px; margin-top: 10px; }
+.step {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255,255,240,0.6);
+  border: 1px solid rgba(200,180,160,0.3);
+  position: relative;
+}
+
+.step::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 6px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, var(--accent), var(--accent2));
+}
+
+.formula {
+  margin: 16px 0;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(250,245,235,0.7);
+  border: 1px solid rgba(200,180,160,0.3);
+  font-family: "Consolas", "D2Coding", monospace;
+  color: #4a3820;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.final-box {
+  margin-top: 24px;
+  padding: 28px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(201,166,107,0.2), rgba(255,255,240,0.6));
+  border: 1px solid rgba(201,166,107,0.25);
+  box-shadow: var(--shadow);
+}
+
+.footer {
+  text-align: center;
+  color: #5c4b3a;
+  font-size: 14px;
+  margin-top: 28px;
+  opacity: 0.8;
+}
+
+@media (max-width:860px) {
+  .grid { grid-template-columns: 1fr; }
+  .wrap { padding-top: 20px; }
+  .hero, .card, .final-box { padding: 20px; border-radius: 22px; }
+}
+</style>
 </head>
 <body>
-<p>엘리베이터의 현재 위치를 <현재층>으로 둔다. 단 현재층은 유리수이다 2층에서 3층 사이 중간에 위치하면 2.5층 처럼 사용
-또한 각 층의 외부 호출 상태를 <상향호출층집합>, <하향호출층집합>, 엘리베이터 내부 목적층을 <내부목적층집합>으로 둔다.
-현재 이동 방향을 <현재방향>으로 둔다.
-<현재방향>은 <상향>, <하향>, <정지> 중 하나이다.
-
-경우 1 if <현재방향> == <상향>
-<현재방향>이 <상향>이면 <현재층>보다 큰 층들 중 처리해야 할 층을 찾는다.
-<경유층수열>을
-<내부목적층집합> 중 <현재층>보다 큰 층과
-<상향호출층집합> 중 <현재층>보다 큰 층의 합집합을 낮은 층부터 정렬한 수열으로 정의한다.
-
-<하향호출층집합> 중 <경유층수열>의 가장 높은 층보다 더 높은 층을 <특별하향호출층>이라 정의한다. (단,  <경유층수열>이 비어있는 경우, <현재층>을 기준으로 특별 호출층을 판단한다.)
-
-또한 <특별하향호출층>을 높은 층부터 정렬하여
-<경유층수열> 뒤에 추가한다.
-
-그리고 나머지 <하향호출층집합>을 높은 층부터 <경유층수열>에 추가한다
-
-그 후 <상향호출층집합> 중 <현재층>보다 낮거나 같은 층을 낮은 층부터 <경유층수열>에 추가한다
-
-즉 최종 경로는
-일반 상향 요청층 -> 특별 하향 호출층 -> 하향 처리 -> 현재층보다 낮은 상향 요청층
-순으로 진행한다.
-
-경우 2 if <현재방향> == <하향>
-<현재방향>이 <하향>이면 <현재층>보다 작은 층들 중 처리해야 할 층을 찾는다.
-
-<경유층수열>을
-<내부목적층집합> 중 <현재층>보다 작은 층과
-<하향호출층집합> 중 <현재층>보다 작은 층의 합집합을 높은 층부터 정렬한 수열으로 정한다.
-
-<상향호출층집합> 중 <경유층수열>의 가장 낮은 층보다 더 낮은 층을 <특별상향호출층>이라 정의한다. (단,  <경유층수열>이 비어있는 경우, <현재층>을 기준으로 특별 호출층을 판단한다.)
-
-또한 <특별상향호출층>을 낮은 층부터 정렬하여
-<경유층수열> 뒤에 추가한다.
-
-그리고 나머지 <상향호출층집합>을 낮은 층부터 <경유층수열>에 추가한다
-
-그 후 <하향호출층집합> 중 <현재층>보다 높거나 같은 층을 높은 층부터 <경유층수열>에 추가한다
-
-즉 최종 경로는
-일반 하향 요청층 -> 특별 상향 호출층 -> 상향 처리 -> 현재층보다 높은 하향 요청 층
-순으로 진행한다.
-
-경우 3 if <현재방향> == <정지>
-    만약 들어온 요청이 <현재층>보다 높다면 <현재방향>을 <상향>으로 낮으면 <하향>으로 같다면 문을 연다(현재방향은 여전히 <정지>이다) (들어온 후 내부에서 누르기전 외부에서 누른다면 그쪽으로 이동하게된다)
-
-
-위의 알고리즘으로 얻은 <경유층수열>를 이용하여 시간을 계산하는 알고리즘이다
-<경유층수열>의 앞에 <현재층>을 추가한다
-<층간거리수열>은 층별로 지면으로 부터의 거리이다(m)
-E-n = <경유층수열>의 n번째 항이다 (<경유층수열>의 시작항은 E-1이다)
-L-n = <층간거리수열>의 n번째 항이다 (<층간거리수열>의 시작항은 L-1이다)
-v는 최대속도이다
-a는 가속도이다 b는 감속도이다
-아래는 기본 물리 식들이며 실제 a,b변수에는 관련이 없습니다
-    k의 거리만큼 a의 가속도로 이동하면 이동 직후의 속도를 v라 할때 아래의 식이 성립한다
-    v^2 = 2*a*k    운동방정식
-    속도가 a부터 b까지 일정하게 변하면서 k만큼의 거리를 이동했을 때 걸린 시간을 t라하면
-    t = k/((a+b)/2) 가 성립한다 //속도가 a일때 k만큼의 거리를 이동했을 때 걸린 시간을 t라하면 t = k/a인데 지금은 a부터 b까지 일정하게 속력이 변하므로 평균 값을 나누면됀다 
-
-sum = 0
-i = 1
-아래를 E-i가 내가 있는 층 이 아닌 동안 반복한다 (내가 있는 층 바로 전까지만 계산한다)
-    만약 i가 1이라면
-    <현재층소수부분> = E-1 - (E-1의 일의 자리까지 내림값)
-
-    <현재층절대높이> =  L-(E-1의 일의 자리까지 내림값)  + <현재층소수부분> *  ( L-(E-1의 일의 자리까지 올림값)   - L-(E-1의 일의 자리까지 내림값) )
-
-    <층간거리> = 절댓값(  L-(E-(i+1))  - <현재층절대높이> )
-아니라면
-    <층간거리> = 절댓값(  L-(E-(i+1))  - L-(E-i))
-
-    정지상태에서 최대속도 v까지 가속하는 데 필요한거리는 (v^2)/(2*a)이며 이를 <가속거리>라 정의한다    //운동방정식의 양변에 a*k를 나눔
-    최대속도상태에서 0까지 감속하는 데 필요한거리는 (v^2)/(2*b)이며 이를 <감속거리>라 정의한다        //운동방정식의 양변에 b*k를 나눔
-    이때 <층간거리>가 <가속거리> + <감속거리> 보다 크다면등속구간이 존재한다
-        가속시간은 v/a         //가속시간은 결국엔 속력0에서 1초당 a만큼 몇번 가속해야 최대속력(v)이 돼는 가 이므로
-           감속시간은 v/b        //감속시간은 결국엔 최대속력(v)에서 1초당 b만큼 몇번 감속해야 0이 돼는 가 이므로
-            등속거리는 <층간거리> - (<가속거리> + <감속거리>) 이다     //<층간거리> = <가속거리> + <감속거리> + <등속거리> 이므로
-        따라서 등속시간은 등속거리/v                              //시간 = 거리/속력   속력은 최대속도인 v 거리는 등속거리이므로 
-        <층간거리>를 이동하는 데 소요돼는 시간은 가속시간 + 감속시간 + 등속시간 이다
-        여기에 멈춰서 문을 열고 사람이 타고 문을 닫는 시간인 <대기시간>을 더하면 E-i층부터 E-(i+1)층 까지 이동 후 탑승자가 오르고 내리는 시간이된다 이를 <총소요시간이라 정의한다> //이를 모든 층에 대하여 반복하면 전체 소요시간이 된다
-        sum에 <총소요시간>을 더한다 
-   만약 아니라면
-        등속구간이 없으므로 가속 -> 감속 이된다
-        가속이 감속으로 변환 돼는 시점의 속도를 <최고점속도>라 정의하고 가속중인 거리를 <가속거리>라 정의 하고 감속중인 거리를 <감속거리>라 정의 하면
-         <감속거리> = <층간거리> - <가속거리>
-        <가속거리>는 (b*<층간거리>)/(a+b)이다    //   <최고점속도>^2 = <가속거리> * (2*a), <최고점속도>^2 = <  감속거리> * (2*b)    ->     <가속거리> * 2*a = (<층간거리> - <가속거리>) * 2*b   ->  <가속거리> *a = (<층간거리> - <가속거리>) *b -> <가속거리> *a = <층간거리>*b - <가속거리>*b 
-          -> <가속거리> *a +  <가속거리>*b = <층간거리>*b ->     <가속거리> * (a+b)  =   <층간거리>*b    - >  <가속거리> = (<층간거리>*b)/(a+b) 
-           <가속거리> = (<층간거리>*b)/(a+b)
-        
-        <최고점속도>  = 루트(2*a*<가속거리>) //운동방정식의 양변에 루트를 씌움
-        속도 0 부터 <최고점속도>에 이르기 까지의 시간을 <가속시간>이라 정의한다 //오해요지 말 바꿀것
-       
-        
-        <가속시간> =  <가속거리>/((0+<최고점속도>)/2)
-             
-        즉 <가속시간> =  ( <최고점속도>^2/(2*a))/((0+<최고점속도>)/2)
-        가속도를 x라 할때 같은 양의 감속은 가속도를 -x로 한것과 같으므로 같은 방식으로 계산하면
-        <감속시간> =  ( <최고점속도>^2/(2*b))/((0+<최고점속도>)/2)
-        <층간거리>를 이동하는 데 소요돼는 시간은 <가속시간> + <감속시간>이다
-          여기에 멈춰서 문을 열고 사람이 타고 문을 닫는 시간인 <대기시간>을 더하면 E-i층부터 E-(i+1)층 까지 이동 후 탑승자가 오르고 내리는 시간이된다 이를 <총소요시간이라 정의한다> //이를 모든 층에 대하여 반복하면 전체 소요시간이 된다
-         sum에 <총소요시간>을 더한다
-    i는 i+ 1로 재정의 한다
-
-위와 같은 과정을 반복하면 sum은 내 층에 엘레베이터가 오기까지 걸리는 시간이 된다
-        
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow">융합과학대회 발표</div>
+    <h1>엘리베이터 도착 시간 예측 알고리즘</h1>
+    <p>
+      이 웹페이지는 엘리베이터의 현재 위치, 이동 방향, 외부 호출 상태, 내부 목적층 정보를 바탕으로
+      사용자가 있는 층까지 엘리베이터가 도착하는 예상 시간을 계산합니다
+    </p>
     
+  </section>
 
-</p>
+  <section class="grid">
+    <article class="card">
+<h2>1. 문제 인식</h2>
+<p>엘레베이터를 기다리는 것은 지루하다 특히 엘레베이터가 어디를 들렀다가 오는 지 얼마 후에 도착 할 지 알수없어 불편하다</p>
+</article>
+    <article class="card">
+      <h2>2. 알고리즘의 기본 개념</h2>
+      <p>본 시스템은 사용자가 엘리베이터 버튼을 누르는 순간, 현재 엘리베이터의 정확한 위치와 이동 방향,
+          그리고 이미 접수되어 있는 다른 층의 요청 정보, 엘레베이터 내부의 호출 데이터 분석하여 사용자가 기다려야 하는 시간을 예측하는 알고리즘입니다.</p>
+<h2>구체적 알고리즘</h2>
+      <h3>엘레베이터가 상향 이동 중일 때의 계산</h3>
+      <p>엘레베이터가 들를 층의 순서를 엘레베이터이동순서 라고 정의한다
+          현재층보다 높은 상향호출층집합을 낮은 층부터 정렬한것을 엘레베이터이동순서에 추가한다
+          하향호출층집합을 높은 층 부터 정렬한 것을 엘레베이터이동순서에 추가한다
+          현재층보다 낮은 상향호출층집합을 낮은 층부터 정렬한 것을 엘레베이터이동순서에 추가한다</p>
+<h3>엘레베이터가 하향 이동 중일 때의 계산</h3>
+        <p>
+          하향 이동 중일 때는 위의 구조를 반대로 적용한다.
+
+          엘레베이터가 들를 층의 순서를 엘레베이터이동순서 라고 정의한다
+          현재층보다 낮은 하향호출층집합을 높은 층부터 정렬한것을 엘레베이터이동순서에 추가한다
+          상향호출층집합을 낮은 층 부터 정렬한 것을 엘레베이터이동순서에 추가한다
+          현재층보다 높은 하향호출층집합을 높은 층부터 정렬한 것을 엘레베이터이동순서에 추가한다
+
+
+        </p>
+<h3>정지 상태일 때</h3>
+        <p>
+          엘리베이터가 정지 상태라면 새로 들어온 호출 위치를 기준으로 방향을 결정한다.
+          요청한 층이 현재층보다 높으면 상향, 낮으면 하향으로 방향을 정하고,
+          같은 층이라면 즉시 문을 열어 사용자가 탑승할 수 있도록 한다.
+        </p>
+    </article>
+
+    <article class="card">
+  <h2>3. 도착 시간 예상 과정</h2>
+  <p>엘리베이터 이동 순서를 기반으로 실제 이동 시간을 계산합니다.</p>
+    <p>현재 엘리베이터의 층과 엘리베이터 이동 순서의 첫 항(가야할 층) 사이의 거리를 구한다.</p>
+    <p><b>거리를 이용해 이동 시간을 계산</b>한 뒤, 각 층에서의 대기 시간을 더한다.</p>
+    <p>다음 층부터 마지막 층까지 동일한 과정을 반복하여 각 구간의 시간을 합산하고, 총 도착 예상 시간을 구한다.</p>
+
+  <h2>4. 층 사이 거리별 시간 계산 공식</h2>
+
+  <h3>등속운동이 있는 경우 (층간거리가 충분히 긴 경우)</h3>
+  <div class="flow">
+    <div class="step">
+      <strong>가속 구간:</strong>
+      <p>엘리베이터가 출발하여 최대속도 v에 도달할 때까지 가속도 a로 이동</p>
+      <div class="formula">가속거리 = v² / (2a)</div>
+      <div class="formula">가속시간 = v / a</div>
+    </div>
+    <div class="step">
+      <strong>등속 구간:</strong>
+      <p>가속과 감속을 제외한 나머지 구간을 등속으로 이동</p>
+      <div class="formula">등속거리 = 전체거리 - (가속거리 + 감속거리)</div>
+      <div class="formula">등속시간 = 등속거리 / v</div>
+    </div>
+    <div class="step">
+      <strong>감속 구간:</strong>
+      <p>목적 층에 가까워지면 감속도 b로 정지</p>
+      <div class="formula">감속거리 = v² / (2b)</div>
+      <div class="formula">감속시간 = v / b</div>
+    </div>
+    <div class="step">
+      <strong>총 이동 시간:</strong>
+      <div class="formula">총시간 = 가속시간 + 등속시간 + 감속시간 + 각 층 정차 대기시간</div>
+    </div>
+  </div>
+
+  <h3>등속운동이 없는 경우 (층간거리가 짧아 최대속도에 도달하지 못하는 경우)</h3>
+  <div class="flow">
+    <div class="step">
+      <strong>가속과 감속 거리 계산:</strong>
+      <p>총거리 s에 맞춰 가속거리 s₁과 감속거리 s₂를 거리 비율로 조정</p>
+      <div class="formula">s₁ = (b / (a + b)) × s</div>
+      <div class="formula">s₂ = (a / (a + b)) × s</div>
+    </div>
+    <div class="step">
+      <strong>최고점 속도 계산:</strong>
+      <div class="formula">v_max = √(2 × a × s₁) = √(2 × b × s₂)</div>
+    </div>
+    <div class="step">
+      <strong>각 구간 시간 계산:</strong>
+      <div class="formula">t_acc = v_max / a</div>
+      <div class="formula">t_dec = v_max / b</div>
+      <div class="formula">총 이동시간 = t_acc + t_dec + 각 층 정차 대기시간</div>
+    </div>
+  </div>
+
+  </article>
+  </section>
+
+  <section class="final-box">
+    <h2>5. 기대호과</h2>
+    <p>지루하지 않고 엘레베이터를 기다릴 수 있따</p>
+  </section>
+
+  <div class="footer">엘레베이터 시간 예측</div>
+</div>
 </body>
 </html>
